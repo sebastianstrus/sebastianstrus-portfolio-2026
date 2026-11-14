@@ -295,6 +295,38 @@
   }
 
   /* ---------------------------------------------------------------------
+     Process: the line fills and steps light up as they pass mid-screen;
+     toolbox tiles get a soft spotlight under the pointer
+     --------------------------------------------------------------------- */
+  var procList = $('.process-steps');
+  var procSteps = $$('.pstep');
+  var stepNow = $('[data-step-now]');
+  var lastStep = -1;
+  function updateProcess(vh) {
+    if (!procList) return;
+    var r = procList.getBoundingClientRect();
+    var mark = vh * 0.55;
+    var span = Math.max(1, r.height - 48);
+    procList.style.setProperty('--lp', clamp((mark - r.top - 24) / span, 0, 1).toFixed(4));
+    var cur = 0;
+    procSteps.forEach(function (li, i) {
+      var done = li.getBoundingClientRect().top + 24 <= mark;
+      li.classList.toggle('is-done', done || i === 0);
+      if (done) cur = i;
+    });
+    if (cur !== lastStep) { lastStep = cur; if (stepNow) stepNow.textContent = cur + 1; }
+  }
+  if (finePointer.matches) {
+    $$('.tile').forEach(function (tile) {
+      tile.addEventListener('pointermove', function (e) {
+        var r = tile.getBoundingClientRect();
+        tile.style.setProperty('--mx', (e.clientX - r.left).toFixed(0) + 'px');
+        tile.style.setProperty('--my', (e.clientY - r.top).toFixed(0) + 'px');
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------------------
      Reveal on scroll, counters, copy email, year
      --------------------------------------------------------------------- */
   function countUp(el) {
@@ -361,6 +393,7 @@
     onScrollChrome(y, vh);
     updatePlatforms(y);
     updateApps(y);
+    updateProcess(vh);
   }
   function requestFrame() { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
   function measure() { measureApps(); measurePlatforms(); requestFrame(); }
